@@ -21,9 +21,16 @@ def index():
     ]
     return render_template('index.html', title='Home', posts=posts)
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    Redirect to login form and check authentication status.
+    
+    There are actually three possible cases that need to be considered to determine where to redirect after a successful login:
+    * If the login URL does not have a next argument, then the user is redirected to the index page.
+    * If the login URL includes a next argument that is set to a relative path (or in other words, a URL without the domain portion), then the user is redirected to that URL.
+    * If the login URL includes a next argument that is set to a full URL that includes a domain name, then the user is redirected to the index page. The application only redirects when the URL is relative in oder to ensure that the redirect stays within the same site as the application.
+    """
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = LoginForm()

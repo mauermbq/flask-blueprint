@@ -6,10 +6,42 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 @login.user_loader
 def load_user(id):
-    """user loader is registered with Flask-Login"""
+    """
+    User Loader Function: Flask-Login keeps track of the logged in user by storing its unique identifier in Flask's 
+    user session. Each time the logged-in user navigates to a new page, Flask-Login retrieves the ID of the user 
+    from the session. Flask-Login knows nothing about databases, and expects that the application will configure a user 
+    loader function. 
+    The user loader is registered with Flask-Login via @login.user_loader decorator
+
+    Parameters
+    ----------
+    id : String 
+        Flask-Login passes id to the function
+
+    Returns
+    -------
+    int
+        Databases that use numeric IDs need to convert the string to integer
+    """
     return User.query.get(int(id))
 
 class User(UserMixin, db.Model):
+    """
+    The Flask-Login extension works with the application's user model, and expects certain properties and methods to be implemented in it (see below). As long as these required items are added to the model, Flask-Login does not have any 
+    other requirements. Consequently it is DB agnostic.
+    
+    Parameters
+    ----------
+    UserMixin : UserMixin
+        Flask-Login provides a mixin class called UserMixin that includes generic implementations of:
+        * is_authenticated: a property that is True if the user has valid credentials or False otherwise.
+        * is_active: a property that is True if the user's account is active or False otherwise.
+        * is_anonymous: a property that is False for regular users, and True for a special, anonymous user.
+        * get_id(): a method that returns a unique identifier for the user as a string (unicode, if using Python 2).
+    db.Model : Model
+        DB Model, instance of SQLAlchemy obeject (hint: some linters have problems with it)
+    """
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
