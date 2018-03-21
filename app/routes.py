@@ -1,14 +1,17 @@
-from flask import render_template, flash, redirect, url_for, request
+"""Routes definition"""
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.urls import url_parse
+from flask import render_template, flash, redirect, url_for, request
 from app import app, db
-from .forms import LoginForm, RegistrationForm
 from app.models import User
+from .forms import LoginForm, RegistrationForm
+
 
 @app.route('/')
 @app.route('/index')
 @login_required
 def index():
+    """Default route index"""
     posts = [  # fake array of posts
         {
             'author': {'nickname': 'John'},
@@ -25,11 +28,21 @@ def index():
 def login():
     """
     Redirect to login form and check authentication status.
-    
-    There are actually three possible cases that need to be considered to determine where to redirect after a successful login:
+    There are actually three possible cases that need to be considered to determine
+    where to redirect after a successful login:
     * If the login URL does not have a next argument, then the user is redirected to the index page.
-    * If the login URL includes a next argument that is set to a relative path (or in other words, a URL without the domain portion), then the user is redirected to that URL.
-    * If the login URL includes a next argument that is set to a full URL that includes a domain name, then the user is redirected to the index page. The application only redirects when the URL is relative in oder to ensure that the redirect stays within the same site as the application.
+    * If the login URL includes a next argument that is set to a relative path (or in other words,
+    a URL without the domain portion), then the user is redirected to that URL.
+    * If the login URL includes a next argument that is set to a full URL that includes a domain
+    name, then the user is redirected to the index page. The application only redirects when the
+    URL is relative in oder to ensure that the redirect stays within the same site as the
+    application.
+
+    Returns
+    -------
+    render_template
+        Renders a login template from the template folder with the given context.
+
     """
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -56,6 +69,19 @@ def logout():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """
+    If User is not logged route to register form, so that users can register themselves
+
+    validate_on_submit() conditional creates a new user with the username, email and password
+    provided, writes it to the database, and then redirects to the login prompt so that the
+    user can log in.
+
+    Returns
+    -------
+    render_template
+        Renders register template from the template folder with the given context.
+
+    """
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = RegistrationForm()

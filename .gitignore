@@ -33,3 +33,5 @@ nosetests.xml
 flask
 app.db
 microblog.log*
+
+.DS_Store
