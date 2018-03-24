@@ -378,8 +378,9 @@ class-naming-style=PascalCase
 const-naming-style=UPPER_CASE
 
 # Regular expression matching correct constant names. Overrides const-naming-
-# style
-#const-rgx=
+# style, allowed lower case as well, as on module level every var is assumed
+# as constant
+const-rgx=[a-z, A-Z]+
 
 # Minimum line length for functions/classes that require docstrings, shorter
 # ones are exempt.
