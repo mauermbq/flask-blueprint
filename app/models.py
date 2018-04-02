@@ -4,9 +4,13 @@ It’s stored on the SQLAlchemy instance you have to create.
 To override the table name, set the __tablename__ class attribute.
 """
 from datetime import datetime
+from time import time
 from hashlib import md5
+import jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from flask_babel import lazy_gettext as _l
+from flask import current_app
 from app import db, login
 
 # auxiliary table that has no data other than the foreign keys withoud model Class
@@ -91,7 +95,7 @@ class User(UserMixin, db.Model):
         combines data from posts and followers tables.
         It filters the users of interest and sort it by post timestamp and include the user's
         own posts through a union.
-        Hint: The "c" is an attribute of SQLAlchemy tables that are not defined as models. 
+        Hint: The "c" is an attribute of SQLAlchemy tables that are not defined as models.
         For these tables, the table columns are all exposed as sub-attributes of this "c" attribute.
         """
         followed = Post.query.join(
@@ -115,6 +119,31 @@ class User(UserMixin, db.Model):
         return self.followed.filter(
             followers.c.followed_id == user.id).count() > 0
 
+    def get_reset_password_token(self, expires_in=600):
+        """
+        Create JWT token for password reset belongin to the User. Decode('utf-8') is necessary
+        because the jwt.encode() function returns the token as a byte sequence
+        Returns
+        -------
+        str
+            generated JWT token as a string
+        """
+        return jwt.encode(
+            {'reset_password': self.id, 'exp': time() + expires_in},
+            current_app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
+
+    @staticmethod
+    def verify_reset_password_token(token):
+        """
+        takes a token and attempts to decode it by invoking PyJWT's jwt.decode() function
+        """
+        try:
+            uid = jwt.decode(token, current_app.config['SECRET_KEY'],
+                             algorithms=['HS256'])['reset_password']
+        except jwt.ExpiredSignatureError:
+            return _l("Token has expired")
+        return User.query.get(uid)
+
     # declare the many-to-many relationship
     # primaryjoin indicates the condition that links the left side entity
     # secondaryjoin indicates the condition that links the right side entity
@@ -131,6 +160,7 @@ class Post(db.Model):
     body = db.Column(db.String(140))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    language = db.Column(db.String(5))
 
     def __repr__(self):
         return '<Post {}>'.format(self.body)

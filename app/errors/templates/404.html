@@ -1,0 +1,9 @@
+{% extends "base.html" %} 
+{% block app_content %}
+<!-- in addition to wrapping the text with _(), the {{ ... }} needs to be added, to force the _() to be evaluated instead of being
+considered a literal in the template.-->
+<h1>{{ _('File Not Found') }}</h1>
+<p>
+    <a href="{{ url_for('index') }}">Back</a>
+</p>
+{% endblock %}

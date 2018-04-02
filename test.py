@@ -8,21 +8,30 @@ Run test by: python tests.py
 """
 from datetime import datetime, timedelta
 import unittest
-from app import app, db
+from app import create_app, db
 from app.models import User, Post
+from config import Config
 
+class TestConfig(Config):
+    """define own test configuration for running tests"""
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'
 
 class UserModelCase(unittest.TestCase):
     """test user model"""
     def setUp(self):
-        """set-up the by using separate in memory database"""
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        """set-up the by using separate test config"""
+        self.app = create_app(TestConfig)
+        self.app_context = self.app.app_context()
+        # Flask pushes an application context, i.e bringing current_app and g to life.
+        self.app_context.push()
         db.create_all()
 
     def tearDown(self):
         """ end session and drop all data"""
         db.session.remove()
         db.drop_all()
+        self.app_context.pop()
 
     def test_password_hashing(self):
         """test passwoord handling"""

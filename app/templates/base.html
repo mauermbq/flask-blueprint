@@ -1,40 +1,94 @@
-<html>
-
-<head>
-    {% if title %}
-    <title>{{ title }} - microblog</title>
-    {% else %}
-    <title>microblog</title>
-    {% endif %}
-</head>
 <!--
-     he flash() function is a useful way to show a message to the user.
-     in order to avoid hard coded links url_vor generates links 
+    Derive from bootstrap/base.html, followed by the four blocks that implement the scripts block, page title, navigation bar and page content respectively.
+    If someone will not use bootstratp from pip package, you need to design your own template inheritance structure.
+    flask-babel: In addition to wrapping the text with _(), the {{ ... }} needs to be added, to force the _() to be evaluated instead of being
+    considered a literal in the template.
 -->
-<body>
-    <div>
-        Microblog:
-        <a href="{{ url_for('index') }}">Home</a>
-        {% if current_user.is_anonymous %}
-        <a href="{{ url_for('login') }}">Login</a>
-        {% else %}
-        <!--
-            Since the user profile view function takes a dynamic argument, the url_for()
-            function receives a value for it as a keyword argument. Since this is a link
-            that points to the logged in's user profile, I can use Flask-Login's
-            current_user to generate the correct URL.
-        -->
-        <a href="{{ url_for('user', username=current_user.username) }}">Profile</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
-        {% endif %}
-    </div>
-    <hr> {% with messages = get_flashed_messages() %} {% if messages %}
-    <ul>
-        {% for message in messages %}
-        <li>{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %} {% endwith %} {% block content %}{% endblock %}
-</body>
+{% extends 'bootstrap/base.html' %}
+{% block scripts %} 
+    <!-- super() loads the base contents od the scripts blog-->
+    {{ super() }}
+    <!--flask-Moment works together with moment.js, so all templates of the application must include this library.-->
+    {{ moment.include_moment() }}
+    <!--extract language code from local object-->
+    {{ moment.lang(g.locale) }}
+    <!--take the input and output DOM nodes, and the source and destination languages, issue the asynchronous request to the server -->
+    <script>
+        function translate(sourceElem, destElem, sourceLang, destLang) {
+            $(destElem).html('<img src="{{ url_for("static", filename="loading.gif") }}">');
+            $.post('/translate', {
+                text: $(sourceElem).text(),
+                source_language: sourceLang,
+                dest_language: destLang
+            }).done(function (response) {
+                $(destElem).text(response['text'])
+            }).fail(function () {
+                $(destElem).text("{{ _('Error: Could not contact server.') }}");
+            });
+        }
+    </script>
+{% endblock %}
 
-</html>
+{% block title %} 
+    {% if title %}{{ title }} - Microblog{% else %}{{ _('Welcome to Microblog') }}{% endif %}
+{% endblock %} 
+{% block navbar %}
+<nav class="navbar navbar-default">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1"
+                aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('index') }}">Microblog</a>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="{{ url_for('index') }}">{{ _('Home') }}</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('explore') }}">{{ _('Explore') }}</a>
+                </li>
+            </ul>
+            <!--
+                Since the user profile view function takes a dynamic argument, the url_for()
+                function receives a value for it as a keyword argument. As this is a link
+                that points to the logged in's user profile, it's possible to use Flask-Login's
+                current_user to generate the correct URL.
+             -->
+            <ul class="nav navbar-nav navbar-right">
+                {% if current_user.is_anonymous %}
+                <li>
+                    <a href="{{ url_for('login') }}">{{ _('Login') }}</a>
+                </li>
+                {% else %}
+                <li>
+                    <a href="{{ url_for('user', username=current_user.username) }}">{{ _('Profile') }}</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('logout') }}">{{ _('Logout') }}</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %} 
+<!--
+    Content block defined as top-level container, renders flashed messages, which 
+    appear styled as Bootstrap alerts
+    Derived templates can define their own content to be rendered in the app_content block.
+    Note: The block named "content" is used by Flask-Bootstrap
+-->
+{% block content %}
+<div class="container">
+    {% with messages = get_flashed_messages() %} {% if messages %} {% for message in messages %}
+    <div class="alert alert-info" role="alert">{{ message }}</div>
+    {% endfor %} {% endif %} {% endwith %} {# application content needs to be provided in the app_content block #} {% block app_content
+    %}{% endblock %}
+</div>
+{% endblock %} {% block scripts %} {{ super() }} {{ moment.include_moment() }} {{ moment.lang(g.locale) }} {% endblock %}
